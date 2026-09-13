@@ -775,13 +775,23 @@ function fill(str){
     .replaceAll("{giver}", CONFIG.giverName);
 }
 
-// ---- editable notes: load any drafts saved earlier in this browser ----
-// Edits to the closing note and each rose's memory text are saved to
-// localStorage as you type — private to this browser/device, so they
-// survive a reload here but won't appear for anyone else who opens the
-// link. Bake the final wording into CONFIG (or ask Claude to) before
-// sending the real link along.
-(function loadSavedNotes(){
+// ---- editable notes: shared across every device via a tiny worker API ----
+// localStorage is just an instant, offline-friendly cache so the page
+// doesn't flash placeholder text while the network request is in
+// flight. The worker (see notes-worker/worker.js) is the real shared
+// source of truth — anyone who opens the link reads the same record,
+// so an edit made on one device shows up for anyone else who loads or
+// reloads the page after that.
+const NOTES_API = "https://navya-birthday-notes.ukaniansh.workers.dev/notes";
+
+function applyNote(key, value){
+  if(!value) return;
+  if(key === "closingNote"){ CONFIG.closingNote = value; return; }
+  const m = key.match(/^memory:(\d)$/);
+  if(m && CONFIG.roses[m[1]]) CONFIG.roses[m[1]].memory = value;
+}
+
+(function loadCachedNotes(){
   try{
     const savedClosing = localStorage.getItem("bouquet:closingNote");
     if(savedClosing) CONFIG.closingNote = savedClosing;
@@ -789,8 +799,43 @@ function fill(str){
       const saved = localStorage.getItem(`bouquet:memory:${i}`);
       if(saved) r.memory = saved;
     });
-  }catch(e){ /* localStorage unavailable — edits just won't persist */ }
+  }catch(e){ /* localStorage unavailable — the server fetch below still works */ }
 })();
+
+// Re-paints any note currently on screen with the latest text, but
+// never while someone is actively typing into it.
+function refreshVisibleNotes(){
+  const closingEl = document.getElementById("closingText");
+  if(closingEl && document.activeElement !== closingEl){
+    closingEl.textContent = fill(CONFIG.closingNote);
+  }
+  const memoryEl = document.getElementById("cardMemoryText");
+  if(memoryEl && document.activeElement !== memoryEl && currentIndex !== null){
+    memoryEl.textContent = fill(CONFIG.roses[currentIndex].memory);
+  }
+}
+
+async function syncNotesFromServer(){
+  try{
+    const res = await fetch(NOTES_API);
+    if(!res.ok) return;
+    const data = await res.json();
+    Object.entries(data).forEach(([key, value]) => {
+      applyNote(key, value);
+      try{ localStorage.setItem(`bouquet:${key}`, value); }catch(e){}
+    });
+    refreshVisibleNotes();
+  }catch(e){ /* offline or the worker's unreachable — cached text stays as-is */ }
+}
+
+function saveNoteToServer(key, value){
+  try{ localStorage.setItem(`bouquet:${key}`, value); }catch(e){}
+  fetch(NOTES_API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key, value }),
+  }).catch(() => { /* will just stay in localStorage on this device until it retries */ });
+}
 
 const state = { bloomed:false, opened:new Set() };
 
@@ -1127,20 +1172,31 @@ function closeDivya(){
   clearTimeout(divyaTextTimer);
 }
 // ---- autosave the editable notes as you type ----
+// Saves to localStorage instantly (so this device never feels laggy)
+// and to the shared worker a beat after typing pauses, so we're not
+// firing a network request on every keystroke.
 function makeNoteAutosave(el, onSave){
+  let debounceTimer = null;
   el.addEventListener("keydown", (e) => {
     if(e.key === "Enter") e.preventDefault(); // keep it one flowing note, no nested blocks
   });
-  el.addEventListener("input", () => onSave(el.textContent));
+  el.addEventListener("input", () => {
+    const text = el.textContent;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => onSave(text), 600);
+  });
 }
 makeNoteAutosave(document.getElementById("closingText"), (text) => {
-  try{ localStorage.setItem("bouquet:closingNote", text); }catch(e){}
+  saveNoteToServer("closingNote", text);
 });
 makeNoteAutosave(document.getElementById("cardMemoryText"), (text) => {
   if(currentIndex === null) return;
   CONFIG.roses[currentIndex].memory = text;
-  try{ localStorage.setItem(`bouquet:memory:${currentIndex}`, text); }catch(e){}
+  saveNoteToServer(`memory:${currentIndex}`, text);
 });
+
+// Pick up anything saved from another device once the page is ready.
+syncNotesFromServer();
 
 document.getElementById("divyaTrigger").addEventListener("click", playDivya);
 document.getElementById("divyaClose").addEventListener("click", closeDivya);
