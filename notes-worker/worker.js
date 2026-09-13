@@ -7,14 +7,10 @@
 // login here — the site's URL itself is the only thing gating who can
 // write, same as the rest of this private gift link.
 
-const ALLOWED_KEYS = new Set([
-  "closingNote",
-  "memory:0",
-  "memory:1",
-  "memory:2",
-  "memory:3",
-  "memory:4",
-]);
+// "closingNote", or "memory:<index>" / "water:<index>" for any rose or
+// watering-message index — pattern-based so adding more roses or more
+// watering steps on the page doesn't require touching this worker.
+const ALLOWED_KEY_PATTERN = /^(closingNote|memory:\d+|water:\d+)$/;
 const MAX_LEN = 2000;
 
 const CORS = {
@@ -46,7 +42,7 @@ export default {
       if (
         !body ||
         typeof body.key !== "string" ||
-        !ALLOWED_KEYS.has(body.key) ||
+        !ALLOWED_KEY_PATTERN.test(body.key) ||
         typeof body.value !== "string" ||
         body.value.length > MAX_LEN
       ) {
