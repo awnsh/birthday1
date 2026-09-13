@@ -1,0 +1,7 @@
+name = "navya-birthday-notes"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "NOTES"
+id = "353a201fb8f1415888b87339bce88c4d"
