@@ -1242,11 +1242,15 @@ function parseSpotify(url){
 function buildPlayer(link){
   const yt = parseYouTube(link);
   if(yt){
-    return `<div class="song-player"><iframe src="https://www.youtube.com/embed/${yt.id}?start=${yt.start}&rel=0" title="Song" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+    // autoplay=1 here relies on the tap that opened the rose counting as
+    // the "user gesture" that permits it — true in every browser we've
+    // tested this against, since the iframe is created as a direct
+    // result of that tap.
+    return `<div class="song-player"><iframe src="https://www.youtube.com/embed/${yt.id}?start=${yt.start}&autoplay=1&rel=0" title="Song" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
   }
   const sp = parseSpotify(link);
   if(sp){
-    return `<div class="song-player spotify"><iframe src="https://open.spotify.com/embed/${sp.type}/${sp.id}" title="Song" allow="encrypted-media" loading="lazy"></iframe></div>`;
+    return `<div class="song-player spotify"><iframe src="https://open.spotify.com/embed/${sp.type}/${sp.id}?autoplay=1" title="Song" allow="autoplay; encrypted-media" loading="lazy"></iframe></div>`;
   }
   return null;
 }
