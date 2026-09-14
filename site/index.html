@@ -397,6 +397,23 @@
   #closingNote p{ margin:0; color:var(--ink-soft); }
   #closingNote .sign{ font-family:"Dancing Script", cursive; font-size:1.6rem; color:var(--ink); }
 
+  #honorableMentions{
+    max-width:560px; width:100%; text-align:center; display:flex; flex-direction:column; gap:16px;
+    padding:24px 26px; border-radius:20px; background:rgba(255,255,255,.4);
+    border:1.5px dashed var(--ink);
+  }
+  #honorableMentions[hidden]{ display:none; }
+  .honor-heading{ font-family:"Playfair Display", serif; font-size:1.3rem; color:var(--ink); }
+  .honor-sub{ margin:-10px 0 0; color:var(--ink-soft); font-size:.85rem; }
+  #honorList{ display:flex; flex-direction:column; gap:18px; }
+  .honor-item{
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding-bottom:18px; border-bottom:1px dashed rgba(27,20,32,.18);
+  }
+  .honor-item:last-child{ border-bottom:none; padding-bottom:0; }
+  .listen-btn.small{ padding:7px 18px; font-size:.8rem; }
+  .honor-note{ margin:0; color:var(--ink-soft); font-size:.92rem; max-width:44ch; line-height:1.5; }
+
   /* ============================================================
      FOCUS OVERLAY — pull the petal / read the memory
      ============================================================ */
@@ -699,6 +716,12 @@
     <p id="closingText" class="editable-note" contenteditable="true" spellcheck="true"></p>
     <div class="sign" id="closingSign"></div>
   </div>
+
+  <div id="honorableMentions" hidden>
+    <div class="honor-heading">Honorable Mentions</div>
+    <p class="honor-sub">A few more that almost made the cut.</p>
+    <div id="honorList"></div>
+  </div>
 </div>
 
 <!-- A second birthday shout-out, tucked at the very bottom -->
@@ -850,6 +873,31 @@ const CONFIG = {
       songLink: "https://www.youtube.com/watch?v=aDvI_xBNBSI&t=85s",
       memory: "Add a sentence or two here about why this song reminds you of {recipient}."
     }
+  ],
+
+  // Shown after all 5 roses have been opened — songs that almost made
+  // the main 5 but didn't quite fit, plus a short note on each. Add or
+  // remove entries freely, or leave the list empty to skip the section
+  // entirely.
+  honorableMentions: [
+    {
+      songTitle: "Song title",
+      songArtist: "Artist name",
+      songLink: "",
+      note: "Add a sentence on why this one almost made the cut."
+    },
+    {
+      songTitle: "Song title",
+      songArtist: "Artist name",
+      songLink: "",
+      note: "Add a sentence on why this one almost made the cut."
+    },
+    {
+      songTitle: "Song title",
+      songArtist: "Artist name",
+      songLink: "",
+      note: "Add a sentence on why this one almost made the cut."
+    }
   ]
 };
 
@@ -978,7 +1026,8 @@ for(let i=0;i<10;i++){
 }
 
 // ---- draft badge ----
-const hasPlaceholders = CONFIG.roses.some(r => !r.photo || !r.songLink || r.songTitle.startsWith("Song title"));
+const hasPlaceholders = CONFIG.roses.some(r => !r.photo || !r.songLink || r.songTitle.startsWith("Song title"))
+  || CONFIG.honorableMentions.some(h => !h.songLink || h.songTitle.startsWith("Song title"));
 const draftBadge = document.getElementById("draftBadge");
 if(!hasPlaceholders) draftBadge.hidden = true;
 document.getElementById("dismissBadge").onclick = () => draftBadge.hidden = true;
@@ -1086,8 +1135,30 @@ function updateProgress(){
   dots.forEach((d, i) => d.classList.toggle("done", state.opened.has(i)));
   if(state.opened.size === CONFIG.roses.length){
     document.getElementById("closingNote").hidden = false;
+    if(CONFIG.honorableMentions.length){
+      document.getElementById("honorableMentions").hidden = false;
+    }
   }
 }
+
+// ---- honorable mentions: songs that didn't make the main 5 ----
+const honorList = document.getElementById("honorList");
+CONFIG.honorableMentions.forEach((h) => {
+  const item = document.createElement("div");
+  item.className = "honor-item";
+  const linkHTML = h.songLink
+    ? `<a class="listen-btn small" href="${h.songLink}" target="_blank" rel="noopener">▶ Listen</a>`
+    : `<span class="listen-btn small is-placeholder">Add your song link</span>`;
+  item.innerHTML = `
+    <div class="song-block">
+      <div class="song-title">${fill(h.songTitle)}</div>
+      <div class="song-artist">${fill(h.songArtist)}</div>
+    </div>
+    ${linkHTML}
+    <p class="honor-note">${fill(h.note)}</p>
+  `;
+  honorList.appendChild(item);
+});
 
 // ---- unwrap scene 1 ----
 document.getElementById("unwrapBtn").addEventListener("click", () => {
