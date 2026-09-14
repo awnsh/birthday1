@@ -389,13 +389,33 @@
   .leaf.right{ right:-20px; transform:rotate(-10deg) scaleX(-1); }
 
   #closingNote{
+    position:relative;
     max-width:560px; text-align:center; display:flex; flex-direction:column; gap:8px;
-    padding:22px 26px; border-radius:20px; background:rgba(255,255,255,.55);
+    padding:46px 26px 22px; border-radius:20px; background:rgba(255,255,255,.55);
     border:1.5px dashed var(--ink);
   }
   #closingNote[hidden]{ display:none; }
   #closingNote p{ margin:0; color:var(--ink-soft); }
   #closingNote .sign{ font-family:"Dancing Script", cursive; font-size:1.6rem; color:var(--ink); }
+
+  /* A little record label stamped on the note, like it's Track No. 19
+     off a shared mixtape — the "19" for her 19th birthday. */
+  .vinyl-label{
+    position:absolute; top:0; left:50%; transform:translate(-50%,-52%) rotate(-7deg);
+    width:70px; height:70px; border-radius:50%;
+    background:var(--ink); border:3px solid var(--cream);
+    box-shadow:0 8px 16px rgba(27,20,32,.35), 0 0 0 1.5px var(--ink);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .vinyl-label::after{
+    content:""; position:absolute; width:8px; height:8px; border-radius:50%;
+    background:var(--cream); box-shadow:0 0 0 1px var(--ink) inset;
+  }
+  .vinyl-label span{
+    font-family:"Playfair Display", serif; font-size:.56rem; font-weight:600;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--cream);
+    text-align:center; line-height:1.35;
+  }
 
   #honorableMentions{
     max-width:560px; width:100%; text-align:center; display:flex; flex-direction:column; gap:16px;
@@ -713,6 +733,7 @@
   </div>
 
   <div id="closingNote" hidden>
+    <div class="vinyl-label" aria-hidden="true"><span>Track<br>No. 19</span></div>
     <p id="closingText" class="editable-note" contenteditable="true" spellcheck="true"></p>
     <div class="sign" id="closingSign"></div>
   </div>
