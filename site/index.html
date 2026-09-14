@@ -914,9 +914,9 @@ const CONFIG = {
       note: "Add a sentence on why this one almost made the cut."
     },
     {
-      songTitle: "Song title",
-      songArtist: "Artist name",
-      songLink: "",
+      songTitle: "I Like Me Better",
+      songArtist: "Lauv",
+      songLink: "https://www.youtube.com/watch?v=a7fzkqLozwA",
       note: "Add a sentence on why this one almost made the cut."
     },
     {
@@ -954,6 +954,8 @@ function applyNote(key, value){
   if(mem && CONFIG.roses[mem[1]]){ CONFIG.roses[mem[1]].memory = value; return; }
   const wat = key.match(/^water:(\d)$/);
   if(wat && CONFIG.wateringMessages[wat[1]] !== undefined) CONFIG.wateringMessages[wat[1]] = value;
+  const hon = key.match(/^honor:(\d)$/);
+  if(hon && CONFIG.honorableMentions[hon[1]]){ CONFIG.honorableMentions[hon[1]].note = value; return; }
 }
 
 let currentWaterStep = null;
@@ -969,6 +971,10 @@ let currentWaterStep = null;
     CONFIG.wateringMessages.forEach((m, i) => {
       const saved = localStorage.getItem(`bouquet:water:${i}`);
       if(saved) CONFIG.wateringMessages[i] = saved;
+    });
+    CONFIG.honorableMentions.forEach((h, i) => {
+      const saved = localStorage.getItem(`bouquet:honor:${i}`);
+      if(saved) h.note = saved;
     });
   }catch(e){ /* localStorage unavailable — the server fetch below still works */ }
 })();
@@ -988,6 +994,12 @@ function refreshVisibleNotes(){
   if(waterEl && document.activeElement !== waterEl && currentWaterStep !== null){
     waterEl.textContent = fill(CONFIG.wateringMessages[currentWaterStep]);
   }
+  CONFIG.honorableMentions.forEach((h, i) => {
+    const honorEl = document.getElementById(`honorNote${i}`);
+    if(honorEl && document.activeElement !== honorEl){
+      honorEl.textContent = fill(h.note);
+    }
+  });
 }
 
 async function syncNotesFromServer(){
@@ -1170,7 +1182,7 @@ function updateProgress(){
 
 // ---- honorable mentions: songs that didn't make the main 5 ----
 const honorList = document.getElementById("honorList");
-CONFIG.honorableMentions.forEach((h) => {
+CONFIG.honorableMentions.forEach((h, i) => {
   const item = document.createElement("div");
   item.className = "honor-item";
   const player = h.songLink ? buildPlayer(h.songLink, false) : null;
@@ -1181,9 +1193,13 @@ CONFIG.honorableMentions.forEach((h) => {
       <div class="song-artist">${fill(h.songArtist)}</div>
     </div>
     ${playerHTML}
-    <p class="honor-note">${fill(h.note)}</p>
+    <p class="honor-note editable-note" id="honorNote${i}" contenteditable="true" spellcheck="true">${fill(h.note)}</p>
   `;
   honorList.appendChild(item);
+  makeNoteAutosave(item.querySelector(`#honorNote${i}`), (text) => {
+    h.note = text;
+    saveNoteToServer(`honor:${i}`, text);
+  });
 });
 
 // ---- unwrap scene 1 ----
