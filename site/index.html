@@ -638,6 +638,13 @@
   }
   .divya-text.show{ opacity:1; transform:translate(-50%,-50%) scale(1); }
 
+  .divya-subtext{
+    position:absolute; left:50%; top:30%; transform:translate(-50%, 26px);
+    width:max-content; max-width:80vw; text-align:center;
+    font-size:.8rem; color:var(--cream); opacity:0; transition:opacity .6s ease;
+  }
+  .divya-subtext.show{ opacity:.85; }
+
   @media (prefers-reduced-motion: reduce){
     .gwagon{ animation:none; left:calc(50% - 130px); }
     .gw-wheel-spin{ animation:none; }
@@ -835,6 +842,7 @@
     </svg>
   </div>
   <div class="divya-text" id="divyaText">Happy Birthday Divya 🎉</div>
+  <p class="divya-subtext" id="divyaSubtext">this is supposed to be a g wagon but dont worry youll get a real one soon</p>
 </div>
 
 <script>
@@ -1400,17 +1408,22 @@ overlay.addEventListener("click", (e) => {
 const divyaOverlay = document.getElementById("divyaOverlay");
 const gwagon = document.getElementById("gwagon");
 const divyaText = document.getElementById("divyaText");
+const divyaSubtext = document.getElementById("divyaSubtext");
 let divyaTextTimer = null;
 
 function playDivya(){
   divyaOverlay.classList.add("show");
   divyaText.classList.remove("show");
+  divyaSubtext.classList.remove("show");
   // restart the CSS drive-across animation from the beginning every time
   gwagon.style.animation = "none";
   void gwagon.offsetWidth;
   gwagon.style.animation = "";
   clearTimeout(divyaTextTimer);
-  divyaTextTimer = setTimeout(() => divyaText.classList.add("show"), 2200);
+  divyaTextTimer = setTimeout(() => {
+    divyaText.classList.add("show");
+    divyaSubtext.classList.add("show");
+  }, 2200);
 }
 function closeDivya(){
   divyaOverlay.classList.remove("show");
